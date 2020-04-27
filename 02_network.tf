@@ -1,6 +1,6 @@
 ######  MAIN NETWORK ######
 resource "aws_vpc" "main" {
-  cidr_block          = "10.0.0.0/16"
+  cidr_block = "10.0.0.0/16"
 
   tags = {
     Name      = local.Scenario
@@ -10,8 +10,20 @@ resource "aws_vpc" "main" {
   }
 }
 
+resource "aws_default_security_group" "default" {
+  vpc_id = aws_vpc.main.id
+
+  tags = {
+    Name      = "Default"
+    Workspace = terraform.workspace
+    Project   = local.Project
+    Scenario  = local.Scenario
+  }
+}
+
 resource "aws_vpc_dhcp_options" "main" {
-  domain_name = local.domain_name
+  domain_name         = local.domain_name
+  domain_name_servers = ["1.1.1.1", "8.8.8.8"]
   tags = {
     Name      = local.Scenario
     Workspace = terraform.workspace
@@ -97,4 +109,10 @@ resource "aws_route_table_association" "private" {
 resource "aws_main_route_table_association" "vpc_main_route_table" {
   vpc_id         = aws_vpc.main.id
   route_table_id = aws_route_table.private.id
+}
+
+# SSH Key
+resource "aws_key_pair" "sshkey" {
+  key_name   = "${local.Project}-${local.Scenario}-${terraform.workspace}"
+  public_key = file(var.pubkeyfile)
 }
